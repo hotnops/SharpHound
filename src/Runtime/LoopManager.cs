@@ -34,7 +34,7 @@ namespace Sharphound.Runtime
                 _context.Logger.LogInformation("Skipping loop because cancellation was requested");
                 return;
             }
-            
+
             _context.Logger.LogInformation("Waiting 30 seconds before starting loop");
             try
             {
@@ -44,9 +44,9 @@ namespace Sharphound.Runtime
             {
                 _context.Logger.LogInformation("Skipping loop because cancellation was requested");
             }
-            
+
             _loopEndTime = DateTime.Now.Add(_context.LoopDuration);
-            
+
             _context.Logger.LogInformation("Looping scheduled to stop at {EndTime}", _loopEndTime);
 
             while (!_context.CancellationTokenSource.IsCancellationRequested)
@@ -58,13 +58,21 @@ namespace Sharphound.Runtime
                 {
                     break;
                 }
-                
+
+                if (_context.IsIncrementalCollection)
+                {
+                    _context.FirstUSN = _context.HighestSeenUSN;
+                }
+
                 _context.UpdateLoopTime();
                 _context.Logger.LogInformation("Starting loop {LoopCount} at {Time} on {Date}", _loopCount, time.ToShortTimeString(), time.ToShortDateString());
                 var task = new CollectionTask(_context).StartCollection();
 
                 var filename = await task;
-                _filenames.Add(filename);
+                if (filename != "")
+                {
+                    _filenames.Add(filename);
+                }
 
                 try
                 {
@@ -75,7 +83,7 @@ namespace Sharphound.Runtime
                     break;
                 }
             }
-            
+
             var zipName = ZipFiles();
             _context.Logger.LogInformation("SharpHound completed {Number} loops! Zip file written to {Filename} ", _loopCount, zipName);
         }
@@ -87,7 +95,7 @@ namespace Sharphound.Runtime
 
             var baseFilename = _context.ZipFilename ?? "BloodHoundLoopResults";
             var resolvedFileName = _context.ResolveFileName(baseFilename, "zip", true);
-            
+
             if (File.Exists(resolvedFileName))
                 resolvedFileName = _context.ResolveFileName(Path.GetRandomFileName(), "zip", true);
 

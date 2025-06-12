@@ -63,15 +63,15 @@ namespace Sharphound.Runtime
 
         internal async Task<string> StartCollection()
         {
+            var oldUsn = _context.HighestSeenUSN;
+            var zipFile = "";
+
             for (var i = 0; i < _context.Threads; i++)
             {
                 var consumer = ConsumeSearchResults();
                 _taskPool.Add(consumer);
             }
 
-            var outputTask = _outputWriter.StartWriter();
-            _outputWriter.StartStatusOutput();
-            var compStatusTask = _compStatusWriter?.StartWriter();
             var producerTask = _producer.Produce();
             await producerTask;
 
@@ -84,6 +84,15 @@ namespace Sharphound.Runtime
             _log.LogInformation("LDAP channel closed, waiting for consumers");
             await Task.WhenAll(_taskPool);
             _log.LogInformation("Consumers finished, closing output channel");
+
+            if (oldUsn == _context.HighestSeenUSN && _context.IsIncrementalCollection)
+            {
+                return "";
+            }
+
+            var outputTask = _outputWriter.StartWriter();
+            _outputWriter.StartStatusOutput();
+            var compStatusTask = _compStatusWriter?.StartWriter();
 
             await foreach (var wkp in _context.LDAPUtils.GetWellKnownPrincipalOutput())
             {
@@ -98,12 +107,12 @@ namespace Sharphound.Runtime
 
                 await _outputChannel.Writer.WriteAsync(wkp);
             }
-                
+
 
             _outputChannel.Writer.Complete();
             _compStatusChannel?.Writer.Complete();
             _log.LogInformation("Output channel closed, waiting for output task to complete");
-            var zipFile = await outputTask;
+            zipFile = await outputTask;
             if (compStatusTask != null) await compStatusTask;
 
             return zipFile;
@@ -115,7 +124,7 @@ namespace Sharphound.Runtime
             var processor = new ObjectProcessors(_context, log);
             var watch = new Stopwatch();
             var threadId = Thread.CurrentThread.ManagedThreadId;
-            
+
             await foreach (var item in _ldapChannel.Reader.ReadAllAsync())
                 try
                 {
