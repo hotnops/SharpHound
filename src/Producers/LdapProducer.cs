@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.DirectoryServices;
+using System.Linq;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Sharphound.Client;
 using SharpHoundCommonLib;
 using SharpHoundCommonLib.Enums;
+using SharpHoundCommonLib.LDAPQueries;
 using SharpHoundCommonLib.OutputTypes;
 
 namespace Sharphound.Producers
@@ -32,6 +36,12 @@ namespace Sharphound.Producers
             if (string.IsNullOrEmpty(ldapData.Filter.GetFilter()))
             {
                 return;
+            }
+
+            if (Context.Flags.IncrementalCollection)
+            {
+                log.LogDebug("Incremental Collection set. Adding uSNChanged to LDAP properties");
+                ldapData.Attributes = ldapData.Attributes.Concat(CommonProperties.IncrementalCollectionProperties).ToArray();
             }
 
             if (Context.Flags.CollectAllProperties)
@@ -77,6 +87,8 @@ namespace Sharphound.Producers
                                 await Channel.Writer.WriteAsync(searchResult, cancellationToken);
                                 Context.Logger.LogTrace("Producer wrote {DistinguishedName} to channel", distinguishedName);
                             }
+
+                            UpdateHighestUNC(searchResult);
                         }
                     }
                 }
@@ -94,6 +106,18 @@ namespace Sharphound.Producers
             }
         }
 
+        private void UpdateHighestUNC(IDirectoryObject searchResult)
+        {
+            long uSNChanged = 0;
+            if (searchResult.TryGetLongProperty(LDAPProperties.USNChanged, out uSNChanged))
+            {
+                if (Context.HighestSeenUSN < uSNChanged)
+                {
+                    Context.HighestSeenUSN = uSNChanged;
+                }
+            }
+        }
+
         /// <summary>
         ///     Uses the LDAP filter and properties specified to grab data from LDAP (Configuration NC), and push it to the queue.
         /// </summary>
@@ -103,6 +127,12 @@ namespace Sharphound.Producers
             var cancellationToken = Context.CancellationTokenSource.Token;
             var configNcData = CreateConfigNCData();
             var configurationNCsCollected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (Context.Flags.IncrementalCollection)
+            {
+                Context.Logger.LogDebug("Incremental Collection set. Adding uSNChanged to LDAP properties");
+                configNcData.Attributes = configNcData.Attributes.Concat(CommonProperties.IncrementalCollectionProperties).ToArray();
+            }
 
             if (string.IsNullOrEmpty(configNcData.Filter.GetFilter()))
                 return;
@@ -135,6 +165,8 @@ namespace Sharphound.Producers
                                 await Channel.Writer.WriteAsync(searchResult, cancellationToken);
                                 Context.Logger.LogTrace("Producer wrote {DistinguishedName} to channel", distinguishedName);
                             }
+
+                            UpdateHighestUNC(searchResult);
                         }
                     }
                 } else {
@@ -157,6 +189,8 @@ namespace Sharphound.Producers
                                 await Channel.Writer.WriteAsync(searchResult, cancellationToken);
                                 Context.Logger.LogTrace("Producer wrote {DistinguishedName} to channel", distinguishedName);
                             }
+
+                            UpdateHighestUNC(searchResult);
                         }
                     }
                 }

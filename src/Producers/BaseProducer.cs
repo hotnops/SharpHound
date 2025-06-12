@@ -40,6 +40,8 @@ namespace Sharphound.Producers
                 LdapProducerQueryGenerator.GenerateDefaultPartitionParameters(Context.ResolvedCollectionMethods);
 
             if (Context.LdapFilter != null) baseData.Filter.AddFilter(Context.LdapFilter, true);
+            if (Context.IsIncrementalCollection == true) baseData.Filter.AddUSNChanged(Context.FirstUSN);
+
             return baseData;
         }
 
@@ -49,6 +51,8 @@ namespace Sharphound.Producers
                 LdapProducerQueryGenerator.GenerateConfigurationPartitionParameters(Context.ResolvedCollectionMethods);
 
             if (Context.LdapFilter != null) baseData.Filter.AddFilter(Context.LdapFilter, true);
+            if (Context.IsIncrementalCollection == true) baseData.Filter.AddUSNChanged(Context.FirstUSN);
+
             return baseData;
         }
     }

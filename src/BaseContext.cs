@@ -29,6 +29,7 @@ namespace Sharphound
             LDAPUtils = new LdapUtils();
             LDAPUtils.SetLdapConfig(ldapConfig);
             CancellationTokenSource = new CancellationTokenSource();
+            HighestSeenUSN = 0;
         }
 
         public bool IsFaulted { get; set; }
@@ -121,6 +122,15 @@ namespace Sharphound
         public string LocalAdminUsername { get; set; }
         public string LocalAdminPassword { get; set; }
         public bool LocalAdminSessionEnum { get; set; }
+        public bool IsIncrementalCollection { get; set; }
+        public long FirstUSN {  get; set; }
+        private long _HighestSeenUSN;
+
+        public long HighestSeenUSN
+        {
+            get => Interlocked.Read(ref _HighestSeenUSN);
+            set => Interlocked.Exchange(ref _HighestSeenUSN, value);
+        }
 
         // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
         // ~Context()

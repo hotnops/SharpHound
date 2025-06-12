@@ -33,6 +33,11 @@
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\SharpHoundCommon\src\CommonLib\SharpHoundCommonLib.csproj" />
+      <ProjectReference Include="..\SharpHoundCommon\src\SharpHoundRPC\SharpHoundRPC.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
 <!--       <Reference Include="SharpHoundCommon">-->
 <!--           <HintPath>..\SharpHoundCommon\src\CommonLib\bin\Debug\net472\SharpHoundCommonLib.dll</HintPath>-->
 <!--       </Reference>-->

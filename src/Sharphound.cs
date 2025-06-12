@@ -34,15 +34,18 @@ namespace Sharphound
 
     #region Console Entrypoint
 
-    public class Program {
-        public static async Task Main(string[] args) {
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
             var logger = new BasicLogger((int)LogLevel.Information);
             logger.LogInformation("This version of SharpHound is compatible with the 5.0.0 Release of BloodHound");
 
-            try {
+            try
+            {
                 // Checks the release version available on the machine.
-                var releaseVersion = (int) Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", "Release", 0);
-                if (releaseVersion == 0) releaseVersion = (int) Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", "Release", 0);
+                var releaseVersion = (int)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", "Release", 0);
+                if (releaseVersion == 0) releaseVersion = (int)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", "Release", 0);
                 // The value 461808 corresponds to .Net 4.7.2
                 if (releaseVersion < 461808)
                 {
@@ -50,7 +53,8 @@ namespace Sharphound
                     return;
                 }
 
-                var parser = new Parser(with => {
+                var parser = new Parser(with =>
+                {
                     with.CaseInsensitiveEnumValues = true;
                     with.CaseSensitive = false;
                     with.HelpWriter = Console.Error;
@@ -85,7 +89,8 @@ namespace Sharphound
                         SearchForest = options.SearchForest,
                         RecurseDomains = options.RecurseDomains,
                         DoLocalAdminSessionEnum = options.DoLocalAdminSessionEnum,
-                        ParititonLdapQueries = options.PartitionLdapQueries
+                        ParititonLdapQueries = options.PartitionLdapQueries,
+                        IncrementalCollection = options.Incremental
                     };
 
                     var ldapOptions = new LdapConfig
@@ -146,9 +151,78 @@ namespace Sharphound
                         }
                     }
 
-                    await StartCollection(options, logger, resolved, flags, ldapOptions);
+                    if (options.Incremental == true && options.DomainController == null)
+                    {
+                        logger.LogError(
+                                "You must specify --domaincontroller option if you perform an incremental collection!");
+                        return;
+                    }
+
+                    IContext context = new BaseContext(logger, ldapOptions, flags)
+                    {
+                        DomainName = options.Domain,
+                        CacheFileName = options.CacheName,
+                        ZipFilename = options.ZipFilename,
+                        SearchBase = options.DistinguishedName,
+                        StatusInterval = options.StatusInterval,
+                        RealDNSName = options.RealDNSName,
+                        ComputerFile = options.ComputerFile,
+                        OutputPrefix = options.OutputPrefix,
+                        OutputDirectory = options.OutputDirectory,
+                        Jitter = options.Jitter,
+                        Throttle = options.Throttle,
+                        LdapFilter = options.LdapFilter,
+                        PortScanTimeout = options.PortCheckTimeout,
+                        ResolvedCollectionMethods = resolved,
+                        Threads = options.Threads,
+                        LoopDuration = options.LoopDuration,
+                        LoopInterval = options.LoopInterval,
+                        ZipPassword = options.ZipPassword,
+                        IsFaulted = false,
+                        LocalAdminUsername = options.LocalAdminUsername,
+                        LocalAdminPassword = options.LocalAdminPassword,
+                        IsIncrementalCollection = options.Incremental,
+                        FirstUSN = options.USN
+                    };
+
+                    var cancellationTokenSource = new CancellationTokenSource();
+                    context.CancellationTokenSource = cancellationTokenSource;
+
+                    // Console.CancelKeyPress += delegate(object sender, ConsoleCancelEventArgs eventArgs)
+                    // {
+                    //     eventArgs.Cancel = true;
+                    //     cancellationTokenSource.Cancel();
+                    // };
+
+                    // Create new chain links
+                    Links<IContext> links = new SharpLinks();
+
+                    // Run our chain
+                    context = links.Initialize(context, ldapOptions);
+                    if (context.Flags.IsFaulted)
+                        return;
+                    context = await links.TestConnection(context);
+                    if (context.Flags.IsFaulted)
+                        return;
+                    context = links.SetSessionUserName(options.OverrideUserName, context);
+                    context = links.InitCommonLib(context);
+                    context = await links.GetDomainsForEnumeration(context);
+                    if (context.Flags.IsFaulted)
+                        return;
+                    context = links.StartBaseCollectionTask(context);
+                    context = await links.AwaitBaseRunCompletion(context);
+                    context = links.StartLoopTimer(context);
+                    context = links.StartLoop(context);
+                    context = await links.AwaitLoopCompletion(context);
+                    context = links.SaveCacheFile(context);
+                    links.Finish(context);
+
+                    if (context.IsIncrementalCollection)
+                        logger.LogCritical($"[Incremental Collection] Highest seen USN for {ldapOptions.Server} is {context.HighestSeenUSN}");
                 });
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 logger.LogError($"Error running SharpHound: {ex.Message}\n{ex.StackTrace}");
             }
         }
@@ -214,7 +288,8 @@ namespace Sharphound
         }
 
         // Accessor function for the PS1 to work, do not change or remove
-        public static void InvokeSharpHound(string[] args) {
+        public static void InvokeSharpHound(string[] args)
+        {
             Main(args).Wait();
         }
     }

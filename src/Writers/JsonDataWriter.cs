@@ -38,6 +38,7 @@ namespace Sharphound.Writers
 
             _serializerSettings = new JsonSerializerSettings()
             {
+                NullValueHandling = NullValueHandling.Ignore,
                 Converters = new List<JsonConverter>
                 {
                     new StringEnumConverter()
@@ -97,13 +98,16 @@ namespace Sharphound.Writers
                 CollectionMethods = (long)_context.ResolvedCollectionMethods,
                 DataType = DataType,
                 Version = DataVersion,
-                CollectorVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+                CollectorVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                Incremental = _context.IsIncrementalCollection && _context.FirstUSN > 0
             };
+
+            if (_context.IsIncrementalCollection) meta.HighestUSN = _context.HighestSeenUSN;
             
             await _jsonWriter.FlushAsync();
             await _jsonWriter.WriteEndArrayAsync();
             await _jsonWriter.WritePropertyNameAsync("meta");
-            await _jsonWriter.WriteRawValueAsync(JsonConvert.SerializeObject(meta, PrettyPrint));
+            await _jsonWriter.WriteRawValueAsync(JsonConvert.SerializeObject(meta, PrettyPrint, _serializerSettings));
             await _jsonWriter.FlushAsync();
             await _jsonWriter.CloseAsync();
         }

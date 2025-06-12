@@ -76,5 +76,9 @@ namespace Sharphound.Client
         EnumerationDomain[] Domains { get; set; }
         void UpdateLoopTime();
         public HashSet<string> CollectedDomainSids { get; }
+
+        public bool IsIncrementalCollection { get; set; }
+        public long FirstUSN { get; set; }
+        public long HighestSeenUSN { get; set; }
     }
 }

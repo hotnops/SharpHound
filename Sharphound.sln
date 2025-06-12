@@ -5,6 +5,10 @@ VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sharphound", "Sharphound.csproj", "{90A6822C-4336-433D-923F-F54CE66BA98F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpHoundCommonLib", "..\SharpHoundCommon\src\CommonLib\SharpHoundCommonLib.csproj", "{2E687039-61CA-4361-85C7-23D64603B88C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpHoundRPC", "..\SharpHoundCommon\src\SharpHoundRPC\SharpHoundRPC.csproj", "{391DCBC2-B963-44D3-8A01-BC5F74D98964}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{90A6822C-4336-433D-923F-F54CE66BA98F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90A6822C-4336-433D-923F-F54CE66BA98F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90A6822C-4336-433D-923F-F54CE66BA98F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E687039-61CA-4361-85C7-23D64603B88C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E687039-61CA-4361-85C7-23D64603B88C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E687039-61CA-4361-85C7-23D64603B88C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E687039-61CA-4361-85C7-23D64603B88C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{391DCBC2-B963-44D3-8A01-BC5F74D98964}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{391DCBC2-B963-44D3-8A01-BC5F74D98964}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{391DCBC2-B963-44D3-8A01-BC5F74D98964}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{391DCBC2-B963-44D3-8A01-BC5F74D98964}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

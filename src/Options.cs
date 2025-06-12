@@ -152,12 +152,21 @@ namespace Sharphound
 
         [Option(HelpText = "Add delay between loops (hh:mm:ss - 00:03:00 is 3 minutes)")] public TimeSpan LoopInterval { get; set; }
 
+        //Incremental Collection Options
+        [Option('i', "Incremental", HelpText = "Perform incremental collection (USNChanged-based)")]
+        public bool Incremental { get; set; }
+
+        [Option(HelpText = "The last collected USN for the selecter DC", Default = 0)]
+        public long USN { get; set; }
+
         //Misc Options
         [Option(HelpText = "Interval in which to display status in milliseconds", Default = 30000)]
         public int StatusInterval { get; set; }
 
         [Option('v', HelpText = "Enable verbose output", Default = (int)LogLevel.Information)]
         public int Verbosity { get; set; }
+
+
 
         internal bool ResolveCollectionMethods(ILogger logger, out CollectionMethod resolved, out bool dconly)
         {
