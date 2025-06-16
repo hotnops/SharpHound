@@ -53,10 +53,13 @@ namespace Sharphound.Runtime
             {
                 _loopCount++;
                 var time = DateTime.Now;
-                _context.Logger.LogInformation("{Time} - {EndTime}", time, _loopEndTime);
-                if (time >= _loopEndTime)
+                if (_context.LoopDuration != TimeSpan.Zero)
                 {
-                    break;
+                    _context.Logger.LogInformation("{Time} - {EndTime}", time, _loopEndTime);
+                    if (time >= _loopEndTime)
+                    {
+                        break;
+                    }
                 }
 
                 if (_context.IsIncrementalCollection)
