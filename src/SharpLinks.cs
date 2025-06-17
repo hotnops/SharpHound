@@ -383,7 +383,7 @@ namespace Sharphound
             if (!context.Flags.Loop || context.CancellationTokenSource.IsCancellationRequested) return context;
 
             //context.ResolvedCollectionMethods = context.ResolvedCollectionMethods.GetLoopCollectionMethods();
-            context.SetupMethodsForLoop();
+            // context.SetupMethodsForLoop();
             context.Logger.LogInformation("Creating loop manager with methods {Methods}",
                 context.ResolvedCollectionMethods);
             var manager = new LoopManager(context);
